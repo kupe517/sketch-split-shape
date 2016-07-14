@@ -1,7 +1,7 @@
 {
     "name" : "Split Shape",
-    "identifier" : "com.sketchapp.examples.helloworld",
-    "version" : "1.0.1",
+    "identifier" : "https://github.com/kupe517/sketch-split-shape",
+    "version" : "1.0",
     "description" : "Split a shape up into smaller subsections",
     "authorEmail" : "brian@rekupe.com",
     "author" : "Brian Kuperman",
