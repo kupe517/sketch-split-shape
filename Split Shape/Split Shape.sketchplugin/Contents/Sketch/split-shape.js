@@ -38,7 +38,6 @@ var onRun = function(context) {
   // generate copies and position them
   for(i = 0; i < rows; i++){
   	for(j = 0; j < columns; j++){
-  		//discard the first copy:
 
   		var newGridItem = [layer duplicate];
   		var frame_2 = [newGridItem frame];
@@ -46,7 +45,9 @@ var onRun = function(context) {
   		[frame_2 setX:[frame x] + [[[frame width]+gutter]]*j];
   		[frame_2 setY:[frame y] + [[[frame height]+gutter]]*i];
 
-
   	}
   }
+  //discard the first copy:
+  var parent=layer.parentGroup();
+  parent.removeLayer(layer);
 }
