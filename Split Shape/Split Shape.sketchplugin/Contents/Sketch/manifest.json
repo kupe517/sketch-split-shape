@@ -1,17 +1,31 @@
 {
-    "name" : "Split Shape",
-    "identifier" : "https://github.com/kupe517/sketch-split-shape",
-    "version" : "1.1",
-    "description" : "Split a shape up into smaller subsections",
-    "authorEmail" : "brian@rekupe.com",
-    "author" : "Brian Kuperman",
-    "commands" : [
+  "author" : "Brian Kuperman",
+  "commands" : [
     {
-      "script" : "split-shape.js",
+      "script" : "script.cocoascript",
       "handler" : "onRun",
       "shortcut" : "cmd ctrl g",
-      "name" : "Split Up Shape",
-      "identifier" : "splitshape"
+      "name" : "Split Shape ...",
+      "identifier" : "splitter"
+    },
+    {
+      "script" : "script.cocoascript",
+      "handler" : "onRepeat",
+      "shortcut" : "cmd option g",
+      "name" : "Split again",
+      "identifier" : "repeat"
     }
-  ]
+  ],
+  "menu": {
+    "isRoot": false,
+    "items": [
+      "splitter",
+      "repeat"
+    ]
+  },
+  "identifier" : "https://github.com/kupe517/sketch-split-shape",
+  "version" : "2.0",
+  "description" : "Split a shape up into smaller subsections",
+  "authorEmail" : "brian@rekupe.com",
+  "name" : "Split Shape"
 }

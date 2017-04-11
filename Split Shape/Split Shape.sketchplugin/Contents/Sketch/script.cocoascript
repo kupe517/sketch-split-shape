@@ -1,0 +1,176 @@
+var Splitter = {
+    DEFAULT_COLUMNS: 3,
+    columns: null,
+    DEFAULT_ROWS: 1,
+    rows: null,
+    DEFAULT_GUTTER: 20,
+    gutter: null,
+    DEFAULT_MARGINS: 0,
+    margins: null,
+
+    selection: null,
+    layer: null,
+    frame: null,
+    command: null,
+    page: null,
+    app: [NSApplication sharedApplication],
+
+    init: function(context, pluginID, commandID) {
+        var doc = NSDocumentController.sharedDocumentController().currentDocument() || NSDocumentController.sharedDocumentController().documents().firstObject();
+        this.command = NSApp.delegate().pluginManager().commandWithSpecifier(MSPluginCommandSpecifier.alloc().initWithPluginBundleIdentifier_commandIdentifier(pluginID, commandID));
+        // this.selection = doc ? doc.findSelectedLayers() : nil;
+        this.selection = context.selection;
+        this.page = [doc currentPage];
+
+        try {
+            this.columns = [(this.command) valueForKey:"splitterCols" onLayer:this.page];
+            this.rows = [(this.command) valueForKey:"splitterRows" onLayer:this.page];
+            this.gutter = [(this.command) valueForKey:"splitterGutter" onLayer:this.page];
+            this.margins = [(this.command) valueForKey:"splitterMargins" onLayer:this.page];
+        }
+        catch (err) {
+            log("Failed fetching cashed values, layer commands not supported?");
+        }
+        if (this.columns == null) {
+            this.columns = this.DEFAULT_COLUMNS;
+        }
+        if (this.rows == null) {
+            this.rows = this.DEFAULT_ROWS;
+        }
+        if (this.gutter == null) {
+            this.gutter = this.DEFAULT_GUTTER;
+        }
+        if (this.margins == null) {
+            this.margins = this.DEFAULT_MARGINS;
+        }
+    },
+
+    createLabel: function(text, frame) {
+        var label = [[NSTextField alloc] initWithFrame:frame];
+        [label setStringValue:text];
+        [label setFont:[NSFont boldSystemFontOfSize:12]];
+        [label setBezeled:false];
+        [label setDrawsBackground:false];
+        [label setEditable:false];
+        [label setSelectable:false];
+        return label;
+    },
+
+    createChoices: function(msg) {
+        var viewBox = [[NSBox alloc] initWithFrame:NSMakeRect(0, 0, 0, 0)];
+        [viewBox setTitle:""];
+
+        [viewBox addSubview:Splitter.createLabel("Columns:", NSMakeRect(0, 20, 300, 20))];
+
+        var columnsField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 100, 20)];
+        [columnsField setStringValue:this.columns];
+        [viewBox addSubview:columnsField];
+
+        [viewBox addSubview:Splitter.createLabel("Rows:", NSMakeRect(0, -25, 300, 20))];
+
+        var rowsField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, -40, 100, 20)];
+        [rowsField setStringValue:this.rows];
+        [viewBox addSubview:rowsField];
+
+        [viewBox addSubview:Splitter.createLabel("Gutter:", NSMakeRect(0, -65, 300, 20))];
+
+        var gutterField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, -85, 100, 20)];
+        [gutterField setStringValue:this.gutter];
+        [viewBox addSubview:gutterField];
+
+        [viewBox addSubview:Splitter.createLabel("Margins:", NSMakeRect(0, -110, 300, 20))];
+
+        var marginsField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, -130, 100, 20)];
+        [marginsField setStringValue:this.margins];
+        [viewBox addSubview:marginsField];
+
+        [viewBox sizeToFit];
+
+        var alert = [[NSAlert alloc] init];
+        [alert setMessageText:msg];
+        [alert addButtonWithTitle:"OK"];
+        [alert addButtonWithTitle:"Cancel"];
+        [alert setAccessoryView:viewBox];
+
+        var responseCode = [alert runModal];
+
+        return [responseCode, [columnsField stringValue], [rowsField stringValue], [gutterField stringValue], [marginsField stringValue]];
+    },
+
+    splitShape: function(columns, rows, gutter, margin) {
+        rows = parseInt(rows)
+        columns = parseInt(columns)
+        gutter = parseInt(gutter)
+        margin = parseInt(margin)
+
+        var layer = this.selection[0];
+        var frame = [layer frame];
+
+        if(margin > 0){
+          [frame setWidth:[[frame width] - [margin*2]]];
+          [frame setX: margin]
+        }
+
+        //resize it first
+        log([[frame width] + gutter - [gutter*columns]] /columns]);
+        [frame setWidth:[[[frame width] + gutter - [gutter*columns]] /columns]];
+        [frame setHeight:[[[frame height] + gutter - [gutter*rows]] /rows]];
+
+        // generate copies and position them
+        for(i = 0; i < rows; i++){
+        	for(j = 0; j < columns; j++){
+
+        		var newGridItem = [layer duplicate];
+        		var frame_2 = [newGridItem frame];
+        		[frame_2 setX:[frame x] + [[[frame width]+gutter]]*j];
+        		[frame_2 setY:[frame y] + [[[frame height]+gutter]]*i];
+
+        	}
+        }
+        //discard the first copy:
+        var parent=layer.parentGroup();
+        parent.removeLayer(layer);
+    }
+};
+
+
+var distributionHandler = function(context, pluginID, commandID, callback) {
+    Splitter.init(context, pluginID, commandID);
+    if ([(Splitter.selection) count] > 0) {
+        callback();
+    }
+    else {
+        log("No selection to split");
+        [(Splitter.app) displayDialog:"No selection, no fun." withTitle:"Splitter is sad"];
+    }
+}
+
+var onRun = function(context) {
+    this.distributionHandler(context, "https://github.com/kupe517/sketch-split-shape", "splitter", function() {
+        var choices = Splitter.createChoices('Split ' + [(Splitter.selection) count] + ' objects'),
+            buttonChoice = choices[0] == 1000 ? "OK" : "Cancel",
+            colString = choices[1],
+            rowsString = choices[2],
+            gutterString = choices[3],
+            marginsString = choices[4];
+        if (buttonChoice === "OK") {
+            Splitter.splitShape(colString, rowsString, gutterString, marginsString);
+
+            try {
+                [(Splitter.command) setValue:rowsString forKey:"splitterRows" onLayer:Splitter.page];
+                [(Splitter.command) setValue:colString forKey:"splitterCols" onLayer:Splitter.page];
+                [(Splitter.command) setValue:gutterString forKey:"splitterGutter" onLayer:Splitter.page];
+                [(Splitter.command) setValue:marginsString forKey:"splitterMargins" onLayer:Splitter.page];
+            }
+            catch (err) {
+                log("Failed saving values, layer commands not supported?");
+            }
+        }
+    });
+}
+
+var onRepeat = function(context) {
+    this.distributionHandler(context, "https://github.com/kupe517/sketch-split-shape", "repeat", function() {
+        Splitter.splitShape(Splitter.columns, Splitter.rows, Splitter.gutter, Splitter.margins);
+    });
+}
