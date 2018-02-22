@@ -2,30 +2,33 @@
   "author" : "Brian Kuperman",
   "commands" : [
     {
+      "name" : "Split Shape",
       "script" : "script.cocoascript",
-      "handler" : "onRun",
+      "handler" : "settings",
       "shortcut" : "cmd ctrl g",
-      "name" : "Split Shape ...",
-      "identifier" : "splitter"
+      "identifier" : "settings",
+      "description" : "Split the currently selected shape into equal columns and rows.",
+      "icon" : "icons/splitShape.png",
     },
     {
       "script" : "script.cocoascript",
-      "handler" : "onRepeat",
-      "shortcut" : "cmd option g",
-      "name" : "Split again",
-      "identifier" : "repeat"
+      "name" : "Split Again",
+      "handler" : "splitAgain",
+      "identifier" : "splitAgain",
+      "description" : "Run Split Shape again with the previous settings.",
+      "icon" : "icons/splitShape.png",
     }
   ],
-  "menu": {
-    "isRoot": false,
-    "items": [
-      "splitter",
-      "repeat"
-    ]
+  "menu" : {
+    "items" : [
+      "settings",
+      "splitAgain"
+    ],
+    "title" : "Split Shape"
   },
   "identifier" : "https://github.com/kupe517/sketch-split-shape",
   "version" : "2.0",
-  "description" : "Split a shape up into smaller subsections",
+  "description" : "Split the currently selected shape into equal columns and rows.",
   "authorEmail" : "brian@rekupe.com",
   "name" : "Split Shape"
 }

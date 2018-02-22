@@ -1,176 +1,396 @@
-var Splitter = {
-    DEFAULT_COLUMNS: 3,
-    columns: null,
-    DEFAULT_ROWS: 1,
-    rows: null,
-    DEFAULT_GUTTER: 20,
-    gutter: null,
-    DEFAULT_MARGINS: 0,
-    margins: null,
+var sketch, document, selection, selectionCount, page, app, layer, layers, layerCount, utils, userDefaults;
 
-    selection: null,
-    layer: null,
-    frame: null,
-    command: null,
-    page: null,
-    app: [NSApplication sharedApplication],
+//Input variables
+var horizontalInput;
+var verticalInput;
+var marginInput;
+var gutterInput;
 
-    init: function(context, pluginID, commandID) {
-        var doc = NSDocumentController.sharedDocumentController().currentDocument() || NSDocumentController.sharedDocumentController().documents().firstObject();
-        this.command = NSApp.delegate().pluginManager().commandWithSpecifier(MSPluginCommandSpecifier.alloc().initWithPluginBundleIdentifier_commandIdentifier(pluginID, commandID));
-        // this.selection = doc ? doc.findSelectedLayers() : nil;
-        this.selection = context.selection;
-        this.page = [doc currentPage];
+function initVars(context) {
+  sketch = context.api();
+  document = sketch.selectedDocument;
+  selection = document.selectedLayers;
+  page = document.selectedPage;)
 
-        try {
-            this.columns = [(this.command) valueForKey:"splitterCols" onLayer:this.page];
-            this.rows = [(this.command) valueForKey:"splitterRows" onLayer:this.page];
-            this.gutter = [(this.command) valueForKey:"splitterGutter" onLayer:this.page];
-            this.margins = [(this.command) valueForKey:"splitterMargins" onLayer:this.page];
-        }
-        catch (err) {
-            log("Failed fetching cashed values, layer commands not supported?");
-        }
-        if (this.columns == null) {
-            this.columns = this.DEFAULT_COLUMNS;
-        }
-        if (this.rows == null) {
-            this.rows = this.DEFAULT_ROWS;
-        }
-        if (this.gutter == null) {
-            this.gutter = this.DEFAULT_GUTTER;
-        }
-        if (this.margins == null) {
-            this.margins = this.DEFAULT_MARGINS;
-        }
-    },
 
-    createLabel: function(text, frame) {
-        var label = [[NSTextField alloc] initWithFrame:frame];
-        [label setStringValue:text];
-        [label setFont:[NSFont boldSystemFontOfSize:12]];
-        [label setBezeled:false];
-        [label setDrawsBackground:false];
-        [label setEditable:false];
-        [label setSelectable:false];
-        return label;
-    },
+  app = [NSApplication sharedApplication];
+  userDefaults = NSUserDefaults.alloc().initWithSuiteName("com.splitshape.sketch");
 
-    createChoices: function(msg) {
-        var viewBox = [[NSBox alloc] initWithFrame:NSMakeRect(0, 0, 0, 0)];
-        [viewBox setTitle:""];
+  // Utilities
+  utils = {
+  "createLabel": function(frame, text) {
+    var label = NSTextField.alloc().initWithFrame(frame);
+    label.setStringValue(text);
+    label.setSelectable(false);
+    label.setEditable(false);
+    label.setBezeled(false);
+    label.setDrawsBackground(false);
+    return label
+  },
+  "getLayerProps": function() {
+    var layer = selection.firstObject();
 
-        [viewBox addSubview:Splitter.createLabel("Columns:", NSMakeRect(0, 20, 300, 20))];
-
-        var columnsField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 100, 20)];
-        [columnsField setStringValue:this.columns];
-        [viewBox addSubview:columnsField];
-
-        [viewBox addSubview:Splitter.createLabel("Rows:", NSMakeRect(0, -25, 300, 20))];
-
-        var rowsField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, -40, 100, 20)];
-        [rowsField setStringValue:this.rows];
-        [viewBox addSubview:rowsField];
-
-        [viewBox addSubview:Splitter.createLabel("Gutter:", NSMakeRect(0, -65, 300, 20))];
-
-        var gutterField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, -85, 100, 20)];
-        [gutterField setStringValue:this.gutter];
-        [viewBox addSubview:gutterField];
-
-        [viewBox addSubview:Splitter.createLabel("Margins:", NSMakeRect(0, -110, 300, 20))];
-
-        var marginsField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, -130, 100, 20)];
-        [marginsField setStringValue:this.margins];
-        [viewBox addSubview:marginsField];
-
-        [viewBox sizeToFit];
-
-        var alert = [[NSAlert alloc] init];
-        [alert setMessageText:msg];
-        [alert addButtonWithTitle:"OK"];
-        [alert addButtonWithTitle:"Cancel"];
-        [alert setAccessoryView:viewBox];
-
-        var responseCode = [alert runModal];
-
-        return [responseCode, [columnsField stringValue], [rowsField stringValue], [gutterField stringValue], [marginsField stringValue]];
-    },
-
-    splitShape: function(columns, rows, gutter, margin) {
-        rows = parseInt(rows)
-        columns = parseInt(columns)
-        gutter = parseInt(gutter)
-        margin = parseInt(margin)
-
-        var layer = this.selection[0];
-        var frame = [layer frame];
-
-        if(margin > 0){
-          [frame setWidth:[[frame width] - [margin*2]]];
-          [frame setX: margin]
-        }
-
-        //resize it first
-        log([[frame width] + gutter - [gutter*columns]] /columns]);
-        [frame setWidth:[[[frame width] + gutter - [gutter*columns]] /columns]];
-        [frame setHeight:[[[frame height] + gutter - [gutter*rows]] /rows]];
-
-        // generate copies and position them
-        for(i = 0; i < rows; i++){
-        	for(j = 0; j < columns; j++){
-
-        		var newGridItem = [layer duplicate];
-        		var frame_2 = [newGridItem frame];
-        		[frame_2 setX:[frame x] + [[[frame width]+gutter]]*j];
-        		[frame_2 setY:[frame y] + [[[frame height]+gutter]]*i];
-
-        	}
-        }
-        //discard the first copy:
-        var parent=layer.parentGroup();
-        parent.removeLayer(layer);
+    if (layer) {
+      var x = layer.frame().x();
+      var y = layer.frame().y();
+      return [x, y];
+    } else {
+      return [0, 0];
     }
+  }
 };
 
-
-var distributionHandler = function(context, pluginID, commandID, callback) {
-    Splitter.init(context, pluginID, commandID);
-    if ([(Splitter.selection) count] > 0) {
-        callback();
-    }
-    else {
-        log("No selection to split");
-        [(Splitter.app) displayDialog:"No selection, no fun." withTitle:"Splitter is sad"];
-    }
 }
 
-var onRun = function(context) {
-    this.distributionHandler(context, "https://github.com/kupe517/sketch-split-shape", "splitter", function() {
-        var choices = Splitter.createChoices('Split ' + [(Splitter.selection) count] + ' objects'),
-            buttonChoice = choices[0] == 1000 ? "OK" : "Cancel",
-            colString = choices[1],
-            rowsString = choices[2],
-            gutterString = choices[3],
-            marginsString = choices[4];
-        if (buttonChoice === "OK") {
-            Splitter.splitShape(colString, rowsString, gutterString, marginsString);
+//Check if user has made a selection. If not, show error
+function checkSelection(context){
+  initVars(context);
 
-            try {
-                [(Splitter.command) setValue:rowsString forKey:"splitterRows" onLayer:Splitter.page];
-                [(Splitter.command) setValue:colString forKey:"splitterCols" onLayer:Splitter.page];
-                [(Splitter.command) setValue:gutterString forKey:"splitterGutter" onLayer:Splitter.page];
-                [(Splitter.command) setValue:marginsString forKey:"splitterMargins" onLayer:Splitter.page];
-            }
-            catch (err) {
-                log("Failed saving values, layer commands not supported?");
-            }
+  log('----- SELECTION -------');
+
+  selectionCount = selection.length;
+
+
+  log('selectionCount: ' + selectionCount);
+
+  if (selectionCount > 0) {
+    // Has the user selected a complete artboard?
+    selection.iterate(function(item) {
+        if(item.isGroup){
+          return false;
         }
-    });
+    } );
+    return true;
+  } else {
+    //Nothing is selected
+    return false;
+  }
+
 }
 
-var onRepeat = function(context) {
-    this.distributionHandler(context, "https://github.com/kupe517/sketch-split-shape", "repeat", function() {
-        Splitter.splitShape(Splitter.columns, Splitter.rows, Splitter.gutter, Splitter.margins);
-    });
+function saveDialogState(context){
+  // The user entered some input in the dialog window and closed it.
+  // We should save the preferences of the user so the user doesn't have to
+  // re-enter them when running the plugin for a second time.
+
+  // Save horizontal textfield
+  horizontalInput = horizontalTextField.stringValue();
+  [userDefaults setObject:horizontalInput forKey:"horizontalInput"]; // Save to user defaults
+
+  // Save vertical textfield
+  verticalInput = verticalTextField.stringValue();
+  [userDefaults setObject:verticalInput forKey:"verticalInput"]; // Save to user defaults
+
+  // Save margin textfield
+  marginInput = marginTextField.stringValue();
+  [userDefaults setObject:marginInput forKey:"marginInput"]; // Save to user defaults
+
+  // Save gutter textfield
+  gutterInput = gutterTextField.stringValue();
+  [userDefaults setObject:gutterInput forKey:"gutterInput"]; // Save to user defaults
+
+  // Save to user defaults
+  userDefaults.synchronize(); // save
+
+  log('⚙️ ------ START SAVED SETTINGS --------- ⚙️');
+  log('horizontalInput: ' + horizontalInput);
+  log('verticalInput: ' + verticalInput);
+  log('⚙️ ------ END SAVED SETTINGS --------- ⚙️');
+
+
+}
+
+function getInputFromUser(context){
+  // Create and show dialog window
+
+  var window = createRectangleWindow(context);
+  var alert = window[0];
+
+  var response = alert.runModal()
+
+  if(response == "1000"){
+    // This code only runs when the user clicks 'OK';
+
+
+    // Fill variables with input from user
+
+    saveDialogState(context);
+
+    return true;
+  } else {
+    return false;
+  }
+
+}
+
+function createRectangleWindow(context) {
+  initVars(context);
+
+  // Setup the window
+  var alert = COSAlertWindow.new();
+  alert.setMessageText("Split Shape Settings")
+  alert.addButtonWithTitle("Save and run");
+  alert.addButtonWithTitle("Save");
+  alert.addButtonWithTitle("Cancel");
+
+
+  // Create the main view
+  var viewWidth = 400;
+  var viewHeight = 170;
+  var viewSpacer = 10;
+  var view = NSView.alloc().initWithFrame(NSMakeRect(0, 0, viewWidth, viewHeight));
+  alert.addAccessoryView(view);
+
+
+  // Labels
+  var infoLabel = utils.createLabel(NSMakeRect(0, viewHeight - 33, (viewWidth - 100), 35),"Your selected shape will be split into a grid based on the settings you provide below.");
+  var horizontalLabel = utils.createLabel(NSMakeRect(-1, viewHeight - 65, (viewWidth / 2) - viewSpacer, 20), "Columns ↔");
+  var verticalLabel = utils.createLabel(NSMakeRect(130 + viewSpacer, viewHeight - 65, (viewWidth / 2) - viewSpacer, 20), "Rows ↕");
+  var marginLabel = utils.createLabel(NSMakeRect(-1, viewHeight - 130, (viewWidth / 2) - viewSpacer, 20), "Margin");
+  var gutterLabel = utils.createLabel(NSMakeRect(130 + viewSpacer, viewHeight - 130, (viewWidth / 2) - viewSpacer, 20), "Gutters");
+
+  view.addSubview(infoLabel);
+  view.addSubview(horizontalLabel);
+  view.addSubview(verticalLabel);
+  view.addSubview(marginLabel);
+  view.addSubview(gutterLabel);
+
+
+
+  // Create inputs
+  horizontalTextField = NSTextField.alloc().initWithFrame(NSMakeRect(0, viewHeight - 85, 130, 20));
+  //slider = NSSlider.alloc().initwithFrame(NSMakeRect(20, viewHeight - 40, 130, 20));
+  verticalTextField = NSTextField.alloc().initWithFrame(NSMakeRect(130 + viewSpacer, viewHeight - 85, 130, 20));
+  marginTextField = NSTextField.alloc().initWithFrame(NSMakeRect(0, viewHeight - 150, 130, 20));
+  gutterTextField = NSTextField.alloc().initWithFrame(NSMakeRect(130 + viewSpacer, viewHeight - 150, 130, 20));
+
+
+  // Make TAB key work to switch between textfields
+  [horizontalTextField setNextKeyView:verticalTextField];
+  [verticalTextField setNextKeyView:marginTextField];
+  [marginTextField setNextKeyView:gutterTextField];
+
+
+  //Adding inputs to the dialog
+  view.addSubview(horizontalTextField);
+  view.addSubview(verticalTextField);
+  view.addSubview(marginTextField);
+  view.addSubview(gutterTextField);
+
+
+  // Fill inputs
+  // var props = utils.getLayerProps();
+
+  horizontalTextField.setStringValue(getHorizontalValue(context));
+  verticalTextField.setStringValue(getVerticalValue(context));
+  marginTextField.setStringValue(getMarginValue(context));
+  gutterTextField.setStringValue(getGutterValue(context));
+
+  return [alert];
+}
+
+function splitShape(context, _horizontal, _vertical, _margin, _gutter){
+
+  initVars(context);
+
+  //Check if the user has selected one or more shapes
+  if(checkSelection(context) == false){
+    log("❌ nothing selected ❌")
+    // No shapes are selected
+    sketch.message("Oops! You have nothing selected to split.");
+    return;
+  };
+
+  selection.iterate(function(item) {
+    var x = item.frame.x;
+    var y = item.frame.y;
+    var width = item.frame.width;
+    var height = item.frame.height;
+    var gutter = Number(_gutter);
+    var margin = Number(_margin);
+    var columns = Number(_horizontal);
+    var rows = Number(_vertical);
+    var onArtboard = item.container.isArtboard;
+
+    log('container ' + onArtboard);
+    log('x: ' + x);
+    log('y: ' + y);
+    log('width: ' + width);
+    log('height: ' + height);
+    log('gutter: ' + gutter);
+    log('margin: ' + margin);
+    log('columns: ' + columns);
+    log('rows: ' + rows);
+
+    if(margin > 0){
+        x = x + margin;
+        y = (margin + y);
+        width = width - ( margin * 2 );
+        height = height - ( margin * 2 );
+    }
+
+    var newWidth = width - ((columns - 1) * gutter);
+    var columnWidth = newWidth / columns;
+
+    if ( rows > 1 ){
+      var rowHeight = (height - ((rows - 1) * gutter)) / rows;
+    }else{
+      var rowHeight = height;
+    }
+    log(rowHeight)
+
+    for(i = 0; i < columns; i++){
+      var newX = x + (gutter * i) + (columnWidth * i);
+      // var rect = page.newShape({frame: new sketch.Rectangle(newX, y, columnWidth, rowHeight)});
+      for(j = 0; j < rows; j++){
+        var newY = y + (gutter * j) + (rowHeight * j);
+        if(onArtboard){
+          var rect = item.container.newShape({frame: new sketch.Rectangle(newX, newY, columnWidth, rowHeight)});
+        }else{
+          var rect = page.newShape({frame: new sketch.Rectangle(newX, newY, columnWidth, rowHeight)});
+        }
+
+      }
+    }
+  } );
+
+  // Confirm that plugin is done with it's job
+  sketch.message("Shazam! One shape becomes many! 🎉");
+}
+
+function getHorizontalValue(context){
+  // Gets and returns saved setting
+  // If there is no saved setting, return default
+
+  var horizontalValue = userDefaults.objectForKey("horizontalInput");
+
+  log("Column Value: ");
+
+  if(horizontalValue != undefined){
+    log(horizontalValue);
+    return horizontalValue
+
+  } else {
+    log("No Column Value");
+    return "3" // Default value
+  }
+
+}
+
+function getVerticalValue(context){
+  // Gets and returns saved setting
+  // If there is no saved setting, return default
+
+  var verticalValue = userDefaults.objectForKey("verticalInput");
+
+  log("Row Value: ");
+
+  if(verticalValue != undefined){
+    log(verticalValue);
+    return verticalValue
+
+  } else {
+    log("No Row Value");
+    return "1" // Default value
+  }
+
+}
+
+function getMarginValue(context){
+  // Gets and returns saved setting
+  // If there is no saved setting, return default
+
+  var marginValue = userDefaults.objectForKey("marginInput");
+
+  log("Margin Value: ");
+
+  if(marginValue != undefined){
+    log(marginValue);
+    return marginValue
+
+  } else {
+    log("No Margin Value");
+    return "0" // Default value
+  }
+
+}
+
+function getGutterValue(context){
+  // Gets and returns saved setting
+  // If there is no saved setting, return default
+
+  var gutterValue = userDefaults.objectForKey("gutterInput");
+
+  log("Gutter Value: ");
+
+  if(gutterValue != undefined){
+    log(gutterValue);
+    return gutterValue
+
+  } else {
+    log("No Gutter Value");
+    return "20" // Default value
+  }
+
+}
+
+function splitAgain(context){
+  // Generate confetti with custom settings
+  // Or default settings when custom settings have never been set
+  initVars(context);
+
+  log("Run with current settings");
+
+
+  var _horizontal = getHorizontalValue(context);
+  var _vertical = getVerticalValue(context);
+  var _margin = getMarginValue(context);
+  var _gutter = getGutterValue(context);
+
+
+  splitShape(context, _horizontal, _vertical, _margin, _gutter);
+
+}
+
+function settings(context){
+  // Display settings window
+
+  // Create and show dialog window
+
+  var window = createRectangleWindow(context);
+  var alert = window[0];
+
+  var response = alert.runModal()
+
+  if(response == "1000"){
+    // This code only runs when the user clicks 'Save and run';
+    log("Save and run")
+
+    // Save user input to user preferences
+    saveDialogState(context);
+
+    // Generate confetti
+    splitAgain(context);
+
+    return true;
+
+  } else
+
+    if(response == "1001"){
+      // This code only runs when the user clicks 'save';
+      log("Save")
+
+      // Save user input to user preferences
+      saveDialogState(context);
+
+      return true;
+
+    }
+
+  {
+    return false;
+  }
+
+
+
 }
