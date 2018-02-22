@@ -252,6 +252,8 @@ function splitShape(context, _horizontal, _vertical, _margin, _gutter){
 
       }
     }
+
+    item.remove();
   } );
 
   // Confirm that plugin is done with it's job
