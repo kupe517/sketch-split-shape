@@ -3,7 +3,7 @@
   "commands" : [
     {
       "name" : "Split Shape",
-      "script" : "script.cocoascript",
+      "script" : "script.js",
       "handler" : "settings",
       "shortcut" : "cmd ctrl g",
       "identifier" : "settings",
@@ -11,7 +11,7 @@
       "icon" : "icons/splitShape.png",
     },
     {
-      "script" : "script.cocoascript",
+      "script" : "script.js",
       "name" : "Split Again",
       "handler" : "splitAgain",
       "identifier" : "splitAgain",
