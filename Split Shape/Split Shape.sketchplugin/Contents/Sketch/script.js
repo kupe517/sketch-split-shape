@@ -12,15 +12,12 @@ function splitAgain() {
 		return;
 	}
 	selection.layers.forEach(layer => {
+		var x, y;
 		var width = layer.frame.width;
 		var height = layer.frame.height;
-		var x = parentOffsetInArtboard(layer).x;
-		var y = parentOffsetInArtboard(layer).y;
 
-		if(layer.parent.name && layer.parent.type === 'Group'){
-		   x += layer.frame.x;
-		   y += layer.frame.y;
-		}
+		x = layer.frame.x;
+		y = layer.frame.y;
 
 		if (margin > 0) {
 			x = x + margin;
@@ -256,10 +253,15 @@ function parentOffsetInArtboard(layer) {
 }
 
 function moveLayer(layer, x, y) {
-	var parentOffset = parentOffsetInArtboard(layer);
 	var newFrame = new sketch.Rectangle(layer.frame);
-	newFrame.x = x - parentOffset.x;
-	newFrame.y = y - parentOffset.y;
+	if(layer.parent.type == 'Artboard'){
+		var parentOffset = parentOffsetInArtboard(layer);
+		newFrame.x = x - parentOffset.x;
+		newFrame.y = y - parentOffset.y;
+	}else{
+		newFrame.x = x;
+		newFrame.y = y;
+	}
 	layer.frame = newFrame;
 	updateParentFrames(layer);
 }
@@ -274,8 +276,11 @@ function sizeLayer(layer, width, height) {
 
 function updateParentFrames(layer) {
 	var parent = layer.parent;
+	// log(parent.type);
 	while (parent && parent.name && parent.type !== 'Artboard') {
-		parent.adjustToFit();
+		if(parent.type !== 'SymbolMaster'){
+			parent.adjustToFit();
+		}
 		parent = parent.parent;
 	}
 }
