@@ -1,12 +1,7 @@
-var sketch = require('sketch/dom');
-var Settings = require('sketch/settings');
-var UI = require('sketch/ui');
-var document = sketch.Document.getSelectedDocument();
-var selection = document.selectedLayers;
-
-var columns, rows, margin, gutter;
+var columns, rows, margin, gutter, sketch, Settings, UI, document, selection;
 
 function splitAgain() {
+	setVariables();
 	if(selection.length === 0){
 		UI.message("Oops! You have to select something for the magic to happen!");
 		return;
@@ -90,6 +85,12 @@ function settings(context) {
 }
 
 function setVariables(){
+	sketch = require('sketch/dom');
+	Settings = require('sketch/settings');
+	UI = require('sketch/ui');
+	document = sketch.Document.getSelectedDocument();
+	selection = document.selectedLayers;
+
 	if(Settings.settingForKey('columnInput') == undefined){
 		columns = 3;
 	}else{
@@ -113,6 +114,7 @@ function setVariables(){
 	}else{
 		gutter = Settings.settingForKey('gutterInput');
 	}
+
 }
 
 function saveDialogState(context){
