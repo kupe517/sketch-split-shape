@@ -265,7 +265,6 @@ function moveLayer(layer, x, y) {
 		newFrame.y = y;
 	}
 	layer.frame = newFrame;
-	updateParentFrames(layer);
 }
 
 function sizeLayer(layer, width, height) {
@@ -273,16 +272,4 @@ function sizeLayer(layer, width, height) {
 	newFrame.width = width;
 	newFrame.height = height;
 	layer.frame = newFrame;
-	updateParentFrames(layer);
-}
-
-function updateParentFrames(layer) {
-	var parent = layer.parent;
-	// log(parent.type);
-	while (parent && parent.name && parent.type !== 'Artboard') {
-		if(parent.type !== 'SymbolMaster'){
-			parent.adjustToFit();
-		}
-		parent = parent.parent;
-	}
 }
