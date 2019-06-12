@@ -41,6 +41,7 @@ function splitAgain() {
 		}
 
 		layer.remove();
+		selection.clear();
 	});
 	UI.message("Shazam! One shape becomes many! 🎉");
 }
