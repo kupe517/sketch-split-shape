@@ -1,3 +1,7 @@
+## Notice
+
+Looking for maintainers! I have stopped using Sketch in favor of Figma and I no longer have time to keep up with the plugin API changes from Sketch which end up breaking the plugin. 
+
 Sketch Split Shape
 ==============
 
